@@ -59,7 +59,12 @@ git clone https://github.com/FiloSottile/mkcert && cd mkcert
 go build -ldflags "-X main.Version=$(git describe --tags)"
 ```
 
-
+This fork also includes a build script for some major systems.  
+Run with:
+```
+build/build.sh
+```
+from project root
 
 ## Supported root stores
 
