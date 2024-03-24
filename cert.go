@@ -66,6 +66,7 @@ func (m *mkcert) makeCert(hosts []string) {
 			Country:            []string{"DE"},
 			Organization:       []string{userFullName},
 			OrganizationalUnit: []string{userAndHostname + " - mkcert"},
+			CommonName:         hosts[0],
 		},
 
 		NotBefore: time.Now(), NotAfter: expiration,
