@@ -25,4 +25,4 @@ function build_all() {
 }
 
 
-build_all main.go v0.1
+build_all main.go v0.2
