@@ -68,16 +68,19 @@ const advancedUsage = `Advanced options:
 	-root-org Organization-Name
 		Change the organizational name of the root certificate as displayed in the browser.
 		Defaults to: <Full Username>
+		Example: mkcert -root-org "MyOrg"
 		This generates a new root CA! (can be used with -root-country)
 
 	-root-cn CommonName
 		Change the CommonName of the root certificate.
 		Defaults to: <Full Username> - Root CA
+		Example: mkcert -root-cn "MyName Root E1"
 		This generates a new root CA! (can be used with all other -root args)
 
 	-root-country Country/Region
 		Change the country/region of the root certificate.
 		Defaults to Germany: DE
+		Example: mkcert -root-country "EU"
 		This generates a new root CA! (can be used with -root-org)
 
 	-CAROOT
