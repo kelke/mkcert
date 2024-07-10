@@ -37,11 +37,7 @@ var userFullName string
 func init() {
 	u, err := user.Current()
 	if err == nil {
-		userAndHostname = u.Username + "@"
 		userFullName = u.Name
-	}
-	if h, err := os.Hostname(); err == nil {
-		userAndHostname += strings.Split(h, ".")[0]
 	}
 }
 
@@ -62,10 +58,9 @@ func (m *mkcert) makeCert(hosts []string) {
 	tpl := &x509.Certificate{
 		SerialNumber: randomSerialNumber(),
 		Subject: pkix.Name{
-			Country:            []string{"DE"},
-			Organization:       []string{userFullName},
-			OrganizationalUnit: []string{userAndHostname + " - mkcert"},
-			CommonName:         hosts[0],
+			Country:      []string{"DE"},
+			Organization: []string{userFullName},
+			CommonName:   hosts[0],
 		},
 
 		NotBefore: time.Now(), NotAfter: expiration,
@@ -332,10 +327,8 @@ func (m *mkcert) newCA() {
 	tpl := &x509.Certificate{
 		SerialNumber: randomSerialNumber(),
 		Subject: pkix.Name{
-			Country:            []string{"DE"},
-			Organization:       []string{userFullName},
-			OrganizationalUnit: []string{userAndHostname + " - mkcert"},
-
+			Country:      []string{"DE"},
+			Organization: []string{userFullName},
 			// The CommonName is required by iOS to show the certificate in the
 			// "Certificate Trust Settings" menu.
 			// https://github.com/FiloSottile/mkcert/issues/47
