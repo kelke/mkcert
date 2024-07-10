@@ -326,21 +326,21 @@ func (m *mkcert) newCA() {
 	skid := sha1.Sum(spki.SubjectPublicKey.Bytes)
 
 	var country []string
-	if m.rootCountry != "" {
+	if m.rootCountry == "" {
 		country = []string{"DE"}
 	} else {
 		country = []string{m.rootCountry}
 	}
 
 	var org []string
-	if m.rootCountry != "" {
+	if m.rootOrg == "" {
 		org = []string{userFullName}
 	} else {
-		org = []string{m.rootCountry}
+		org = []string{m.rootOrg}
 	}
 
 	var cn string
-	if m.rootCN != "" {
+	if m.rootCN == "" {
 		cn = userFullName + " - Root CA"
 	} else {
 		cn = m.rootCN
