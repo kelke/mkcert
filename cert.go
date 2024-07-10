@@ -332,7 +332,7 @@ func (m *mkcert) newCA() {
 			// The CommonName is required by iOS to show the certificate in the
 			// "Certificate Trust Settings" menu.
 			// https://github.com/FiloSottile/mkcert/issues/47
-			CommonName: userFullName + " - RootCA",
+			CommonName: userFullName + " - Root CA",
 		},
 		SubjectKeyId: skid[:],
 
