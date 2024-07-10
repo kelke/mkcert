@@ -278,9 +278,10 @@ func (m *mkcert) makeCertFromCSR() {
 	log.Printf("It will expire on %s 🗓\n\n", expiration.Format("2 January 2006"))
 }
 
-// loadCA will load or create the CA at CAROOT.
-func (m *mkcert) loadCA() {
-	if !pathExists(filepath.Join(m.CAROOT, rootName)) {
+// loadOrGenerateCA will load or create the CA at CAROOT.
+func (m *mkcert) loadOrGenerateCA() {
+	forceNewRootCA := m.rootCountry != "" || m.rootOrg != "" || m.rootCN != ""
+	if !pathExists(filepath.Join(m.CAROOT, rootName)) || forceNewRootCA {
 		m.newCA()
 	}
 
@@ -324,15 +325,36 @@ func (m *mkcert) newCA() {
 
 	skid := sha1.Sum(spki.SubjectPublicKey.Bytes)
 
+	var country []string
+	if m.rootCountry != "" {
+		country = []string{"DE"}
+	} else {
+		country = []string{m.rootCountry}
+	}
+
+	var org []string
+	if m.rootCountry != "" {
+		org = []string{userFullName}
+	} else {
+		org = []string{m.rootCountry}
+	}
+
+	var cn string
+	if m.rootCN != "" {
+		cn = userFullName + " - Root CA"
+	} else {
+		cn = m.rootCN
+	}
+
 	tpl := &x509.Certificate{
 		SerialNumber: randomSerialNumber(),
 		Subject: pkix.Name{
-			Country:      []string{"DE"},
-			Organization: []string{userFullName},
+			Country:      country,
+			Organization: org,
 			// The CommonName is required by iOS to show the certificate in the
 			// "Certificate Trust Settings" menu.
 			// https://github.com/FiloSottile/mkcert/issues/47
-			CommonName: userFullName + " - Root CA",
+			CommonName: cn,
 		},
 		SubjectKeyId: skid[:],
 

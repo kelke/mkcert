@@ -65,6 +65,21 @@ const advancedUsage = `Advanced options:
 	    Generate a certificate based on the supplied CSR. Conflicts with
 	    all other flags and arguments except -install and -cert-file.
 
+	-root-org Organization-Name
+		Change the organizational name of the root certificate as displayed in the browser.
+		Defaults to: <Full Username>
+		This generates a new root CA! (can be used with -root-country)
+
+	-root-cn CommonName
+		Change the CommonName of the root certificate.
+		Defaults to: <Full Username> - Root CA
+		This generates a new root CA! (can be used with all other -root args)
+
+	-root-country Country/Region
+		Change the country/region of the root certificate.
+		Defaults to Germany: DE
+		This generates a new root CA! (can be used with -root-org)
+
 	-CAROOT
 	    Print the CA certificate and key storage location.
 
@@ -91,18 +106,21 @@ func main() {
 	}
 	log.SetFlags(0)
 	var (
-		installFlag   = flag.Bool("install", false, "")
-		uninstallFlag = flag.Bool("uninstall", false, "")
-		pkcs12Flag    = flag.Bool("pkcs12", false, "")
-		rsaFlag       = flag.Bool("rsa", false, "")
-		clientFlag    = flag.Bool("client", false, "")
-		helpFlag      = flag.Bool("help", false, "")
-		carootFlag    = flag.Bool("CAROOT", false, "")
-		csrFlag       = flag.String("csr", "", "")
-		certFileFlag  = flag.String("cert-file", "", "")
-		keyFileFlag   = flag.String("key-file", "", "")
-		p12FileFlag   = flag.String("p12-file", "", "")
-		versionFlag   = flag.Bool("version", false, "")
+		installFlag     = flag.Bool("install", false, "")
+		uninstallFlag   = flag.Bool("uninstall", false, "")
+		pkcs12Flag      = flag.Bool("pkcs12", false, "")
+		rsaFlag         = flag.Bool("rsa", false, "")
+		clientFlag      = flag.Bool("client", false, "")
+		helpFlag        = flag.Bool("help", false, "")
+		carootFlag      = flag.Bool("CAROOT", false, "")
+		csrFlag         = flag.String("csr", "", "")
+		certFileFlag    = flag.String("cert-file", "", "")
+		keyFileFlag     = flag.String("key-file", "", "")
+		p12FileFlag     = flag.String("p12-file", "", "")
+		rootOrgFlag     = flag.String("root-org", "", "")
+		rootCNFlag      = flag.String("root-cn", "", "")
+		rootCountryFlag = flag.String("root-country", "", "")
+		versionFlag     = flag.Bool("version", false, "")
 	)
 	flag.Usage = func() {
 		fmt.Fprint(flag.CommandLine.Output(), shortUsage)
@@ -146,6 +164,7 @@ func main() {
 		installMode: *installFlag, uninstallMode: *uninstallFlag, csrPath: *csrFlag,
 		pkcs12: *pkcs12Flag, rsa: *rsaFlag, client: *clientFlag,
 		certFile: *certFileFlag, keyFile: *keyFileFlag, p12File: *p12FileFlag,
+		rootOrg: *rootOrgFlag, rootCN: *rootCNFlag, rootCountry: *rootCountryFlag,
 	}).Run(flag.Args())
 }
 
@@ -153,10 +172,11 @@ const rootName = "rootCA.crt"
 const rootKeyName = "rootCA.key"
 
 type mkcert struct {
-	installMode, uninstallMode bool
-	pkcs12, rsa, client        bool
-	keyFile, certFile, p12File string
-	csrPath                    string
+	installMode, uninstallMode   bool
+	pkcs12, rsa, client          bool
+	keyFile, certFile, p12File   string
+	csrPath                      string
+	rootOrg, rootCN, rootCountry string
 
 	CAROOT string
 	caCert *x509.Certificate
@@ -174,7 +194,7 @@ func (m *mkcert) Run(args []string) {
 		log.Fatalln("ERROR: failed to find the default CA location, set one as the CAROOT env var")
 	}
 	fatalIfErr(os.MkdirAll(m.CAROOT, 0755), "failed to create the CAROOT")
-	m.loadCA()
+	m.loadOrGenerateCA()
 
 	if m.installMode {
 		m.install()
