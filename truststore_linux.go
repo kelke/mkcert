@@ -33,7 +33,7 @@ func init() {
 		CertutilInstallHelp = "zypper install mozilla-nss-tools"
 	}
 	if pathExists("/etc/pki/ca-trust/source/anchors/") {
-		SystemTrustFilename = "/etc/pki/ca-trust/source/anchors/%s.pem"
+		SystemTrustFilename = "/etc/pki/ca-trust/source/anchors/%s.crt"
 		SystemTrustCommand = []string{"update-ca-trust", "extract"}
 	} else if pathExists("/usr/local/share/ca-certificates/") {
 		SystemTrustFilename = "/usr/local/share/ca-certificates/%s.crt"
@@ -42,7 +42,7 @@ func init() {
 		SystemTrustFilename = "/etc/ca-certificates/trust-source/anchors/%s.crt"
 		SystemTrustCommand = []string{"trust", "extract-compat"}
 	} else if pathExists("/usr/share/pki/trust/anchors") {
-		SystemTrustFilename = "/usr/share/pki/trust/anchors/%s.pem"
+		SystemTrustFilename = "/usr/share/pki/trust/anchors/%s.crt"
 		SystemTrustCommand = []string{"update-ca-certificates"}
 	}
 }

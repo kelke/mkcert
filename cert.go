@@ -47,7 +47,7 @@ func init() {
 
 func (m *mkcert) makeCert(hosts []string) {
 	if m.caKey == nil {
-		log.Fatalln("ERROR: can't create new certificates because the CA key (rootCA-key.pem) is missing")
+		log.Fatalln("ERROR: can't create new certificates because the CA key (rootCA.key) is missing")
 	}
 
 	priv, err := m.generateKey(false)
@@ -213,7 +213,7 @@ func randomSerialNumber() *big.Int {
 
 func (m *mkcert) makeCertFromCSR() {
 	if m.caKey == nil {
-		log.Fatalln("ERROR: can't create new certificates because the CA key (rootCA-key.pem) is missing")
+		log.Fatalln("ERROR: can't create new certificates because the CA key (rootCA.key) is missing")
 	}
 
 	csrPEMBytes, err := os.ReadFile(m.csrPath)
