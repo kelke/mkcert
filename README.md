@@ -93,8 +93,8 @@ To only install the local root CA into a subset of them, you can set the `TRUST_
 	-client
 	    Generate a certificate for client authentication.
 
-	-ecdsa
-	    Generate a certificate with an ECDSA key.
+	-rsa
+	    Generate a certificate with an RSA key (RSA-2048 for Leaf, RSA-4096 for Root).
 
 	-pkcs12
 	    Generate a ".p12" PKCS #12 file, also know as a ".pfx" file,

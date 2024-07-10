@@ -164,13 +164,18 @@ func (m *mkcert) printHosts(hosts []string) {
 }
 
 func (m *mkcert) generateKey(rootCA bool) (crypto.PrivateKey, error) {
-	if m.ecdsa {
-		return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	}
+	// root certificates should have a higher security level as their lifetime is considerably longer
 	if rootCA {
-		return rsa.GenerateKey(rand.Reader, 3072)
+		if m.rsa {
+			return rsa.GenerateKey(rand.Reader, 4096)
+		}
+		return ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	}
-	return rsa.GenerateKey(rand.Reader, 2048)
+
+	if m.rsa {
+		return rsa.GenerateKey(rand.Reader, 2048)
+	}
+	return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 }
 
 func (m *mkcert) fileNames(hosts []string) (certFile, keyFile, p12File string) {

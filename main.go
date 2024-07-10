@@ -54,8 +54,8 @@ const advancedUsage = `Advanced options:
 	-client
 	    Generate a certificate for client authentication.
 
-	-ecdsa
-	    Generate a certificate with an ECDSA key.
+	-rsa
+	    Generate a certificate with an RSA key (RSA-2048 for Leaf, RSA-4096 for Root).
 
 	-pkcs12
 	    Generate a ".p12" PKCS #12 file, also know as a ".pfx" file,
@@ -94,7 +94,7 @@ func main() {
 		installFlag   = flag.Bool("install", false, "")
 		uninstallFlag = flag.Bool("uninstall", false, "")
 		pkcs12Flag    = flag.Bool("pkcs12", false, "")
-		ecdsaFlag     = flag.Bool("ecdsa", false, "")
+		rsaFlag       = flag.Bool("rsa", false, "")
 		clientFlag    = flag.Bool("client", false, "")
 		helpFlag      = flag.Bool("help", false, "")
 		carootFlag    = flag.Bool("CAROOT", false, "")
@@ -136,7 +136,7 @@ func main() {
 	if *installFlag && *uninstallFlag {
 		log.Fatalln("ERROR: you can't set -install and -uninstall at the same time")
 	}
-	if *csrFlag != "" && (*pkcs12Flag || *ecdsaFlag || *clientFlag) {
+	if *csrFlag != "" && (*pkcs12Flag || *rsaFlag || *clientFlag) {
 		log.Fatalln("ERROR: can only combine -csr with -install and -cert-file")
 	}
 	if *csrFlag != "" && flag.NArg() != 0 {
@@ -144,7 +144,7 @@ func main() {
 	}
 	(&mkcert{
 		installMode: *installFlag, uninstallMode: *uninstallFlag, csrPath: *csrFlag,
-		pkcs12: *pkcs12Flag, ecdsa: *ecdsaFlag, client: *clientFlag,
+		pkcs12: *pkcs12Flag, rsa: *rsaFlag, client: *clientFlag,
 		certFile: *certFileFlag, keyFile: *keyFileFlag, p12File: *p12FileFlag,
 	}).Run(flag.Args())
 }
@@ -154,7 +154,7 @@ const rootKeyName = "rootCA.key"
 
 type mkcert struct {
 	installMode, uninstallMode bool
-	pkcs12, ecdsa, client      bool
+	pkcs12, rsa, client        bool
 	keyFile, certFile, p12File string
 	csrPath                    string
 
