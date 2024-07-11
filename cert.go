@@ -181,7 +181,7 @@ func (m *mkcert) fileNames(hosts []string) (certFile, keyFile, p12File string) {
 		defaultName += "-client"
 	}
 
-	certFile = "./" + defaultName + ".crt"
+	certFile = "./" + defaultName + ".pem"
 	if m.certFile != "" {
 		certFile = m.certFile
 	}

@@ -39,7 +39,7 @@ Created a new certificate valid for the following names 📜
  - "127.0.0.1"
  - "::1"
 
-The certificate is at "./example.com+5.crt" and the key at "./example.com+5.key" ✅
+The certificate is at "./example.com+5.pem" and the key at "./example.com+5.key" ✅
 ```
 
 <p align="center"><img width="498" alt="Chrome and Firefox screenshot" src="https://user-images.githubusercontent.com/1225294/51066373-96d4aa80-15be-11e9-91e2-f4e44a3a4458.png"></p>
@@ -110,7 +110,7 @@ To only install the local root CA into a subset of them, you can set the `TRUST_
 #### Example
 
 ```
-mkcert -key-file key.crt -cert-file cert.crt example.com *.example.com
+mkcert -key-file key.pem -cert-file cert.pem example.com *.example.com
 ```
 
 ### S/MIME
@@ -123,7 +123,7 @@ mkcert filippo@example.com
 
 ### Mobile devices
 
-For the certificates to be trusted on mobile devices, you will have to install the root CA. It's the `rootCA.crt` file in the folder printed by `mkcert -CAROOT`.
+For the certificates to be trusted on mobile devices, you will have to install the root CA. It's the `rootCA.pem` file in the folder printed by `mkcert -CAROOT`.
 
 On iOS, you can either use AirDrop, email the CA to yourself, or serve it from an HTTP server. After opening it, you need to [install the profile in Settings > Profile Downloaded](https://github.com/FiloSottile/mkcert/issues/233#issuecomment-690110809) and then [enable full trust in it](https://support.apple.com/en-nz/HT204477).
 
@@ -134,7 +134,7 @@ For Android, you will have to install the CA and then enable user roots in the d
 Node does not use the system root store, so it won't accept mkcert certificates automatically. Instead, you will have to set the [`NODE_EXTRA_CA_CERTS`](https://nodejs.org/api/cli.html#cli_node_extra_ca_certs_file) environment variable.
 
 ```
-export NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.crt"
+export NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.pem"
 ```
 
 ### Changing the location of the CA files
@@ -147,7 +147,7 @@ If you want to manage separate CAs, you can use the environment variable `$CAROO
 
 Installing in the trust store does not require the CA key, so you can export the CA certificate and use mkcert to install it in other machines.
 
-* Look for the `rootCA.crt` file in `mkcert -CAROOT`
+* Look for the `rootCA.pem` file in `mkcert -CAROOT`
 * copy it to a different machine
 * set `$CAROOT` to its directory
 * run `mkcert -install`
