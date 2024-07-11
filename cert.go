@@ -363,7 +363,7 @@ func (m *mkcert) newCA() {
 
 		BasicConstraintsValid: true,
 		IsCA:                  true,
-		MaxPathLenZero:        true,
+		MaxPathLen:            2,
 	}
 
 	cert, err := x509.CreateCertificate(rand.Reader, tpl, tpl, pub, priv)
