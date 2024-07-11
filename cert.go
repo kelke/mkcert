@@ -437,6 +437,11 @@ func (m *mkcert) newCA() {
 		org = []string{m.rootOrg}
 	}
 
+	var orgUnit []string
+	if m.rootOU != "" {
+		orgUnit = []string{m.rootOU}
+	}
+
 	var cn string
 	if m.rootCN == "" {
 		cn = defaultOrganization + " - Root CA"
@@ -447,8 +452,9 @@ func (m *mkcert) newCA() {
 	tpl := &x509.Certificate{
 		SerialNumber: randomSerialNumber(),
 		Subject: pkix.Name{
-			Country:      country,
-			Organization: org,
+			Country:            country,
+			Organization:       org,
+			OrganizationalUnit: orgUnit,
 			// The CommonName is required by iOS to show the certificate in the
 			// "Certificate Trust Settings" menu.
 			// https://github.com/FiloSottile/mkcert/issues/47

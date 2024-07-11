@@ -88,6 +88,10 @@ const advancedUsage = `Advanced options:
 		Defaults to: <Full Username> - Root CA
 		Example: mkcert -root-cn "MyName Root E1"
 
+	-root-ou OrganizationalUnit
+		Set an Organizational Unit for the root certificate
+		Not set by default.
+
 	-root-country Country/Region
 		Change the country/region of the root certificate.
 		Defaults to Germany: DE
@@ -135,6 +139,7 @@ func main() {
 		interCNFlag      = flag.String("inter-cn", "", "")
 		rootOrgFlag      = flag.String("root-org", "", "")
 		rootCNFlag       = flag.String("root-cn", "", "")
+		rootOUFlag       = flag.String("root-ou", "", "")
 		rootCountryFlag  = flag.String("root-country", "", "")
 		versionFlag      = flag.Bool("version", false, "")
 	)
@@ -179,7 +184,7 @@ func main() {
 	if *interFlag == false && *interCNFlag != "" {
 		log.Fatalln("ERROR: use -inter to create an intermediate certificate")
 	}
-	if *rootOrgFlag != "" || *rootCNFlag != "" || *rootCountryFlag != "" {
+	if *rootOrgFlag != "" || *rootCNFlag != "" || *rootCountryFlag != "" || *rootOUFlag != "" {
 		log.Println("Beware that custom root Arguments will only " +
 			"take effect on generation of a new CA, either on init, or by passing -root")
 	}
@@ -188,7 +193,8 @@ func main() {
 		pkcs12: *pkcs12Flag, rsa: *rsaFlag, client: *clientFlag,
 		certFile: *certFileFlag, keyFile: *keyFileFlag, p12File: *p12FileFlag,
 		inter: *interFlag, interCN: *interCNFlag,
-		forceNewRoot: *forceNewRootFlag, rootOrg: *rootOrgFlag, rootCN: *rootCNFlag, rootCountry: *rootCountryFlag,
+		forceNewRoot: *forceNewRootFlag, rootOrg: *rootOrgFlag,
+		rootCN: *rootCNFlag, rootOU: *rootOUFlag, rootCountry: *rootCountryFlag,
 	}).Run(flag.Args())
 }
 
@@ -196,13 +202,12 @@ const rootName = "rootCA.pem"
 const rootKeyName = "rootCA.key"
 
 type mkcert struct {
-	installMode, uninstallMode   bool
-	pkcs12, rsa, client          bool
-	forceNewRoot, inter          bool
-	keyFile, certFile, p12File   string
-	csrPath                      string
-	interCN                      string
-	rootOrg, rootCN, rootCountry string
+	installMode, uninstallMode  bool
+	pkcs12, rsa, client         bool
+	forceNewRoot, inter         bool
+	keyFile, certFile, p12File  string
+	csrPath, interCN, rootOrg   string
+	rootCN, rootCountry, rootOU string
 
 	CAROOT string
 	caCert *x509.Certificate
