@@ -55,7 +55,8 @@ const advancedUsage = `Advanced options:
 	    Generate a certificate for client authentication.
 
 	-rsa
-	    Generate a certificate with an RSA key (RSA-2048 for Leaf, RSA-4096 for Root).
+	    Generate a certificate with an RSA key.
+		(RSA-2048 for Leaf, RSA-4096 for Root/Intermediate)
 
 	-pkcs12
 	    Generate a ".p12" PKCS #12 file, also know as a ".pfx" file,
@@ -64,6 +65,14 @@ const advancedUsage = `Advanced options:
 	-csr CSR
 	    Generate a certificate based on the supplied CSR. Conflicts with
 	    all other flags and arguments except -install and -cert-file.
+
+	-inter
+		Generates an intermediate Certificate. This will not be used automatically
+		but can be used when the $CAROOT environment variable is set to its path
+
+	-inter-cn CommonName
+		Intermediate certificate Common Name
+		Defaults to: <Full Username> - Intermediate
 
 	-root
 		Forces the creation of a new root certificate (not needed for inital setup).
@@ -110,23 +119,6 @@ func main() {
 	}
 	log.SetFlags(0)
 	var (
-		installFlag     = flag.Bool("install", false, "")
-		uninstallFlag   = flag.Bool("uninstall", false, "")
-		pkcs12Flag      = flag.Bool("pkcs12", false, "")
-		rsaFlag         = flag.Bool("rsa", false, "")
-		clientFlag      = flag.Bool("client", false, "")
-		helpFlag        = flag.Bool("help", false, "")
-		carootFlag      = flag.Bool("CAROOT", false, "")
-		csrFlag         = flag.String("csr", "", "")
-		certFileFlag    = flag.String("cert-file", "", "")
-		keyFileFlag     = flag.String("key-file", "", "")
-		p12FileFlag     = flag.String("p12-file", "", "")
-		rootOrgFlag     = flag.String("root-org", "", "")
-		rootCNFlag      = flag.String("root-cn", "", "")
-		rootCountryFlag = flag.String("root-country", "", "")
-		versionFlag     = flag.Bool("version", false, "")
-		forceNewRootFlag = flag.Bool("root", false, "")
-		forceNewRootFlag = flag.Bool("root", false, "")
 		installFlag      = flag.Bool("install", false, "")
 		uninstallFlag    = flag.Bool("uninstall", false, "")
 		pkcs12Flag       = flag.Bool("pkcs12", false, "")
@@ -134,11 +126,13 @@ func main() {
 		clientFlag       = flag.Bool("client", false, "")
 		helpFlag         = flag.Bool("help", false, "")
 		carootFlag       = flag.Bool("CAROOT", false, "")
+		interFlag        = flag.Bool("inter", false, "")
 		forceNewRootFlag = flag.Bool("root", false, "")
 		csrFlag          = flag.String("csr", "", "")
 		certFileFlag     = flag.String("cert-file", "", "")
 		keyFileFlag      = flag.String("key-file", "", "")
 		p12FileFlag      = flag.String("p12-file", "", "")
+		interCNFlag      = flag.String("inter-cn", "", "")
 		rootOrgFlag      = flag.String("root-org", "", "")
 		rootCNFlag       = flag.String("root-cn", "", "")
 		rootCountryFlag  = flag.String("root-country", "", "")
@@ -182,6 +176,9 @@ func main() {
 	if *csrFlag != "" && flag.NArg() != 0 {
 		log.Fatalln("ERROR: can't specify extra arguments when using -csr")
 	}
+	if *interFlag == false && *interCNFlag != "" {
+		log.Fatalln("ERROR: use -inter to create an intermediate certificate")
+	}
 	if *rootOrgFlag != "" || *rootCNFlag != "" || *rootCountryFlag != "" {
 		log.Println("Beware that custom root Arguments will only " +
 			"take effect on generation of a new CA, either on init, or by passing -root")
@@ -190,7 +187,7 @@ func main() {
 		installMode: *installFlag, uninstallMode: *uninstallFlag, csrPath: *csrFlag,
 		pkcs12: *pkcs12Flag, rsa: *rsaFlag, client: *clientFlag,
 		certFile: *certFileFlag, keyFile: *keyFileFlag, p12File: *p12FileFlag,
-		rootOrg: *rootOrgFlag, rootCN: *rootCNFlag, rootCountry: *rootCountryFlag,
+		inter: *interFlag, interCN: *interCNFlag,
 		forceNewRoot: *forceNewRootFlag, rootOrg: *rootOrgFlag, rootCN: *rootCNFlag, rootCountry: *rootCountryFlag,
 	}).Run(flag.Args())
 }
@@ -204,6 +201,7 @@ type mkcert struct {
 	forceNewRoot, inter          bool
 	keyFile, certFile, p12File   string
 	csrPath                      string
+	interCN                      string
 	rootOrg, rootCN, rootCountry string
 
 	CAROOT string
@@ -249,6 +247,11 @@ func (m *mkcert) Run(args []string) {
 		if warning {
 			log.Println("Run \"mkcert -install\" for certificates to be trusted automatically ⚠️")
 		}
+	}
+
+	if m.inter {
+		m.makeIntermediate()
+		return
 	}
 
 	if m.csrPath != "" {

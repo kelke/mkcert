@@ -150,6 +150,74 @@ func (m *mkcert) makeCert(hosts []string) {
 	}
 }
 
+func (m *mkcert) makeIntermediate() {
+	if m.caKey == nil {
+		log.Fatalln("ERROR: can't create new intermediate CA, because the root CA key (rootCA.key) is missing")
+	}
+
+	priv, err := m.generateKey(true)
+	fatalIfErr(err, "failed to generate intermediate certificate key")
+	pub := priv.(crypto.Signer).Public()
+
+	spkiASN1, err := x509.MarshalPKIXPublicKey(pub)
+	fatalIfErr(err, "failed to encode public key")
+
+	var spki struct {
+		Algorithm        pkix.AlgorithmIdentifier
+		SubjectPublicKey asn1.BitString
+	}
+	_, err = asn1.Unmarshal(spkiASN1, &spki)
+	fatalIfErr(err, "failed to decode public key")
+
+	skid := sha1.Sum(spki.SubjectPublicKey.Bytes)
+
+	// Intermediate CA validity must be less than the root CA validity
+	expiration := validateExpiration(m.caCert, defaultIntermediateLifespan)
+
+	var cn string
+	if m.interCN == "" {
+		cn = defaultOrganization + " - Intermediate"
+	} else {
+		cn = m.interCN
+	}
+
+	tpl := &x509.Certificate{
+		SerialNumber: randomSerialNumber(),
+		Subject: pkix.Name{
+			Country:      m.caCert.Subject.Country,
+			Organization: m.caCert.Subject.Organization,
+			CommonName:   cn,
+		},
+		SubjectKeyId: skid[:],
+
+		NotBefore: time.Now(), NotAfter: expiration,
+
+		KeyUsage: x509.KeyUsageCertSign,
+
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+		MaxPathLen:            1,
+	}
+
+	interKeyName := cn + ".key"
+	interCertName := cn + ".pem"
+	cert, err := x509.CreateCertificate(rand.Reader, tpl, m.caCert, pub, m.caKey)
+	fatalIfErr(err, "failed to generate intermediate certificate")
+
+	privDER, err := x509.MarshalPKCS8PrivateKey(priv)
+	fatalIfErr(err, "failed to encode intermediate certificate key")
+	err = os.WriteFile(interKeyName, pem.EncodeToMemory(
+		&pem.Block{Type: "PRIVATE KEY", Bytes: privDER}), 0400)
+	fatalIfErr(err, "failed to save intermediate certificate key")
+
+	err = os.WriteFile(interCertName, pem.EncodeToMemory(
+		&pem.Block{Type: "CERTIFICATE", Bytes: cert}), 0644)
+	fatalIfErr(err, "failed to save intermediate certificate")
+
+	log.Printf("Created a new intermediate certificate 🎉\n")
+
+	log.Printf("\nThe certificate is at \"%s\" and the key at \"%s\" ✅\n\n", interCertName, interKeyName)
+
 	if reducedValidity {
 		log.Printf("‼️ Reduced validity ‼️ %s 🗓\n\n", expiration.Format("2 January 2006"))
 	} else {
