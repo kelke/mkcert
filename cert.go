@@ -31,14 +31,19 @@ import (
 	pkcs12 "software.sslmate.com/src/go-pkcs12"
 )
 
-var userAndHostname string
-var userFullName string
+const defaultCountry string = "DE"
+
+var defaultLeafCertLifespan time.Time = time.Now().AddDate(1, 1, 0)
+var defaultIntermediateLifespan time.Time = time.Now().AddDate(1, 1, 0)
+var defaultRootLifespan time.Time = time.Now().AddDate(10, 0, 0)
+var defaultOrganization string
 var reducedValidity bool = false
 
 func init() {
 	u, err := user.Current()
 	if err == nil {
-		userFullName = u.Name
+		userFullName := u.Name
+		defaultOrganization = userFullName
 	}
 }
 
@@ -138,7 +143,6 @@ func (m *mkcert) makeCert(hosts []string) {
 		log.Printf("\nThe legacy PKCS#12 encryption password is the often hardcoded default \"changeit\" ℹ️\n\n")
 	}
 
-	log.Printf("It will expire on %s 🗓\n\n", expiration.Format("2 January 2006"))
 	if reducedValidity {
 		log.Printf("‼️ Reduced validity ‼️ %s 🗓\n\n", expiration.Format("2 January 2006"))
 	} else {
@@ -353,21 +357,21 @@ func (m *mkcert) newCA() {
 
 	var country []string
 	if m.rootCountry == "" {
-		country = []string{"DE"}
+		country = []string{defaultCountry}
 	} else {
 		country = []string{m.rootCountry}
 	}
 
 	var org []string
 	if m.rootOrg == "" {
-		org = []string{userFullName}
+		org = []string{defaultOrganization}
 	} else {
 		org = []string{m.rootOrg}
 	}
 
 	var cn string
 	if m.rootCN == "" {
-		cn = userFullName + " - Root CA"
+		cn = defaultOrganization + " - Root CA"
 	} else {
 		cn = m.rootCN
 	}
@@ -384,8 +388,7 @@ func (m *mkcert) newCA() {
 		},
 		SubjectKeyId: skid[:],
 
-		NotAfter:  time.Now().AddDate(10, 0, 0),
-		NotBefore: time.Now(),
+		NotBefore: time.Now(), NotAfter: defaultRootLifespan,
 
 		KeyUsage: x509.KeyUsageCertSign,
 
@@ -426,5 +429,5 @@ func (m *mkcert) newCA() {
 }
 
 func (m *mkcert) caUniqueName() string {
-	return userFullName + " - RootCA" + m.caCert.SerialNumber.String()
+	return defaultOrganization + " - RootCA" + m.caCert.SerialNumber.String()
 }
