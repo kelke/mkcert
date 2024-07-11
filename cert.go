@@ -33,6 +33,7 @@ import (
 
 var userAndHostname string
 var userFullName string
+var reducedValidity bool = false
 
 func init() {
 	u, err := user.Current()
@@ -50,10 +51,12 @@ func (m *mkcert) makeCert(hosts []string) {
 	fatalIfErr(err, "failed to generate certificate key")
 	pub := priv.(crypto.Signer).Public()
 
-	// Certificates last for 2 years and 3 months, which is always less than
-	// 825 days, the limit that macOS/iOS apply to all certificates,
-	// including custom roots. See https://support.apple.com/en-us/HT210176.
-	expiration := time.Now().AddDate(2, 3, 0)
+	// Certificate validity must be less than 825 days,
+	// the limit that macOS/iOS apply to all certificates,
+	// See https://support.apple.com/en-us/HT210176.
+	//
+	// Leaf Certificate validity must be less than the root CA validity
+	expiration := validateExpiration(m.caCert, defaultLeafCertLifespan)
 
 	tpl := &x509.Certificate{
 		SerialNumber: randomSerialNumber(),
@@ -136,6 +139,28 @@ func (m *mkcert) makeCert(hosts []string) {
 	}
 
 	log.Printf("It will expire on %s 🗓\n\n", expiration.Format("2 January 2006"))
+	if reducedValidity {
+		log.Printf("‼️ Reduced validity ‼️ %s 🗓\n\n", expiration.Format("2 January 2006"))
+	} else {
+		log.Printf("It will expire on %s 🗓\n\n", expiration.Format("2 January 2006"))
+	}
+}
+
+	if reducedValidity {
+		log.Printf("‼️ Reduced validity ‼️ %s 🗓\n\n", expiration.Format("2 January 2006"))
+	} else {
+		log.Printf("It will expire on %s 🗓\n\n", expiration.Format("2 January 2006"))
+	}
+}
+
+func validateExpiration(caCert *x509.Certificate, expiration time.Time) time.Time {
+	if expiration.After(caCert.NotAfter) {
+		expiration = caCert.NotAfter
+		log.Println("The planned validity is longer than the root validity ⚠️")
+		log.Println("Reducing validity to: ", expiration.Format("2 January 2006"), " ‼️")
+		reducedValidity = true
+	}
+	return expiration
 }
 
 func (m *mkcert) printHosts(hosts []string) {
@@ -223,7 +248,8 @@ func (m *mkcert) makeCertFromCSR() {
 	fatalIfErr(err, "failed to parse the CSR")
 	fatalIfErr(csr.CheckSignature(), "invalid CSR signature")
 
-	expiration := time.Now().AddDate(2, 3, 0)
+	// Leaf Certificate validity must be less than the root CA validity
+	expiration := validateExpiration(m.caCert, defaultLeafCertLifespan)
 	tpl := &x509.Certificate{
 		SerialNumber:    randomSerialNumber(),
 		Subject:         csr.Subject,
@@ -291,6 +317,9 @@ func (m *mkcert) loadOrGenerateCA() {
 	}
 	m.caCert, err = x509.ParseCertificate(certDERBlock.Bytes)
 	fatalIfErr(err, "failed to parse the CA certificate")
+	if m.caCert.NotAfter.Before(time.Now()) {
+		log.Fatalln("ERROR: Your Root certificate has expired, pass -root to generate a new one!")
+	}
 
 	if !pathExists(filepath.Join(m.CAROOT, rootKeyName)) {
 		return // keyless mode, where only -install works
