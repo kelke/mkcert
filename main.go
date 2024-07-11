@@ -248,6 +248,10 @@ func (m *mkcert) Run(args []string) {
 			log.Println("Run \"mkcert -install\" for certificates to be trusted automatically ⚠️")
 		}
 	}
+	if m.forceNewRoot {
+		// root flag indicates no Leaf-Cert is wanted
+		return
+	}
 
 	if m.inter {
 		m.makeIntermediate()
