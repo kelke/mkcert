@@ -304,8 +304,7 @@ func (m *mkcert) makeCertFromCSR() {
 
 // loadOrGenerateCA will load or create the CA at CAROOT.
 func (m *mkcert) loadOrGenerateCA() {
-	forceNewRootCA := m.rootCountry != "" || m.rootOrg != "" || m.rootCN != ""
-	if !pathExists(filepath.Join(m.CAROOT, rootName)) || forceNewRootCA {
+	if !pathExists(filepath.Join(m.CAROOT, rootName)) || m.forceNewRoot {
 		m.newCA()
 	}
 
@@ -400,6 +399,21 @@ func (m *mkcert) newCA() {
 
 	privDER, err := x509.MarshalPKCS8PrivateKey(priv)
 	fatalIfErr(err, "failed to encode CA key")
+
+	renamePath := filepath.Join(m.CAROOT, rootKeyName)
+	if pathExists(renamePath) {
+		newPath := renamePath + "-old.bak"
+		err = os.Rename(renamePath, newPath)
+		fatalIfErr(err, "failed to move old root CA key")
+		log.Println("Moved old root CA key to " + newPath + " ➡️")
+	}
+	renamePath = filepath.Join(m.CAROOT, rootName)
+	if pathExists(renamePath) {
+		newPath := renamePath + "-old.bak"
+		err = os.Rename(renamePath, newPath)
+		fatalIfErr(err, "failed to move old root CA certificate")
+		log.Println("Moved old root CA certificate to " + newPath + " ➡️")
+	}
 	err = os.WriteFile(filepath.Join(m.CAROOT, rootKeyName), pem.EncodeToMemory(
 		&pem.Block{Type: "PRIVATE KEY", Bytes: privDER}), 0400)
 	fatalIfErr(err, "failed to save CA key")

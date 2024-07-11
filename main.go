@@ -65,23 +65,24 @@ const advancedUsage = `Advanced options:
 	    Generate a certificate based on the supplied CSR. Conflicts with
 	    all other flags and arguments except -install and -cert-file.
 
+	-root
+		Forces the creation of a new root certificate (not needed for inital setup).
+		Can overwrite existing roots but backs up old ones.
+
 	-root-org Organization-Name
 		Change the organizational name of the root certificate as displayed in the browser.
 		Defaults to: <Full Username>
 		Example: mkcert -root-org "MyOrg"
-		This generates a new root CA! (can be used with -root-country)
 
 	-root-cn CommonName
 		Change the CommonName of the root certificate.
 		Defaults to: <Full Username> - Root CA
 		Example: mkcert -root-cn "MyName Root E1"
-		This generates a new root CA! (can be used with all other -root args)
 
 	-root-country Country/Region
 		Change the country/region of the root certificate.
 		Defaults to Germany: DE
 		Example: mkcert -root-country "EU"
-		This generates a new root CA! (can be used with -root-org)
 
 	-CAROOT
 	    Print the CA certificate and key storage location.
@@ -124,6 +125,24 @@ func main() {
 		rootCNFlag      = flag.String("root-cn", "", "")
 		rootCountryFlag = flag.String("root-country", "", "")
 		versionFlag     = flag.Bool("version", false, "")
+		forceNewRootFlag = flag.Bool("root", false, "")
+		forceNewRootFlag = flag.Bool("root", false, "")
+		installFlag      = flag.Bool("install", false, "")
+		uninstallFlag    = flag.Bool("uninstall", false, "")
+		pkcs12Flag       = flag.Bool("pkcs12", false, "")
+		rsaFlag          = flag.Bool("rsa", false, "")
+		clientFlag       = flag.Bool("client", false, "")
+		helpFlag         = flag.Bool("help", false, "")
+		carootFlag       = flag.Bool("CAROOT", false, "")
+		forceNewRootFlag = flag.Bool("root", false, "")
+		csrFlag          = flag.String("csr", "", "")
+		certFileFlag     = flag.String("cert-file", "", "")
+		keyFileFlag      = flag.String("key-file", "", "")
+		p12FileFlag      = flag.String("p12-file", "", "")
+		rootOrgFlag      = flag.String("root-org", "", "")
+		rootCNFlag       = flag.String("root-cn", "", "")
+		rootCountryFlag  = flag.String("root-country", "", "")
+		versionFlag      = flag.Bool("version", false, "")
 	)
 	flag.Usage = func() {
 		fmt.Fprint(flag.CommandLine.Output(), shortUsage)
@@ -163,20 +182,26 @@ func main() {
 	if *csrFlag != "" && flag.NArg() != 0 {
 		log.Fatalln("ERROR: can't specify extra arguments when using -csr")
 	}
+	if *rootOrgFlag != "" || *rootCNFlag != "" || *rootCountryFlag != "" {
+		log.Println("Beware that custom root Arguments will only " +
+			"take effect on generation of a new CA, either on init, or by passing -root")
+	}
 	(&mkcert{
 		installMode: *installFlag, uninstallMode: *uninstallFlag, csrPath: *csrFlag,
 		pkcs12: *pkcs12Flag, rsa: *rsaFlag, client: *clientFlag,
 		certFile: *certFileFlag, keyFile: *keyFileFlag, p12File: *p12FileFlag,
 		rootOrg: *rootOrgFlag, rootCN: *rootCNFlag, rootCountry: *rootCountryFlag,
+		forceNewRoot: *forceNewRootFlag, rootOrg: *rootOrgFlag, rootCN: *rootCNFlag, rootCountry: *rootCountryFlag,
 	}).Run(flag.Args())
 }
 
-const rootName = "rootCA.crt"
+const rootName = "rootCA.pem"
 const rootKeyName = "rootCA.key"
 
 type mkcert struct {
 	installMode, uninstallMode   bool
 	pkcs12, rsa, client          bool
+	forceNewRoot, inter          bool
 	keyFile, certFile, p12File   string
 	csrPath                      string
 	rootOrg, rootCN, rootCountry string
