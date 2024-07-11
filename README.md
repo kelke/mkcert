@@ -6,18 +6,29 @@ mkcert is a simple tool for making locally-trusted development certificates. It 
 This is a fork of [FiloSottile's mkcert](https://github.com/FiloSottile/mkcert) with more personal Subject Names.  
 The following default Subject Values cannot be changed, which is why this fork was created:
 
-- Organization: `mkcert development certificate`
-- Organizational Unit: `<username@fqdn> (<Full-Name>)`
-- Common Name: `mkcert <username@fqdn> (<Full-Name>)`
+| Subject Info   | Default                                | Changeable |
+| -------------- | -------------------------------------- | ---------- |
+| Organization   | mkcert development certificate         | ❌          |
+| Organizational | `<username@fqdn> (<Full-Name>)`        | ❌          |
+| Common Name    | `mkcert <username@fqdn> (<Full-Name>)` | ❌          |
 
 
 
-This fork changes these Subject Values to the following:
+#### This fork changes these Subject Values to the following:
 
-- Country: `<Countycode>`
-- Organization: `<Full-Name>`
-- Organizational Unit: `username@hostname - mkcert`
-- Common Name: `<Full-Name> - RootCA`
+| Subject Info        | Default                      | Changeable          |
+| ------------------- | ---------------------------- | ------------------- |
+| Country             | DE                           | ✅ (`-root-country`) |
+| Organization        | `<Full-Name> CA`             | ✅(`-root-org`)      |
+| Organizational Unit | _unset_                      | ✅(`-root-ou`)       |
+| Common Name         | `<Full-Name> - ECC/RSA Root` | ✅(`-root-cn`)       |
+
+**Also adds:**
+
+- ✅ Creation of Intermediate-Certificates
+- ✅ intermediate-ready root certificate
+- ✅ Recreating the root via `-root` flag (if for example expired)
+- ✅ Root certificates with P-384 instead of P-256 or RSA-4096 instead of RSA-2048
 
 
 
@@ -94,7 +105,8 @@ To only install the local root CA into a subset of them, you can set the `TRUST_
 	    Generate a certificate for client authentication.
 
 	-rsa
-	    Generate a certificate with an RSA key (RSA-2048 for Leaf, RSA-4096 for Root).
+	    Generate a certificate with an RSA key.
+		(RSA-2048 for Leaf, RSA-4096 for Root/Intermediate)
 
 	-pkcs12
 	    Generate a ".p12" PKCS #12 file, also know as a ".pfx" file,
@@ -103,6 +115,49 @@ To only install the local root CA into a subset of them, you can set the `TRUST_
 	-csr CSR
 	    Generate a certificate based on the supplied CSR. Conflicts with
 	    all other flags and arguments except -install and -cert-file.
+
+	-inter
+		Generates an intermediate Certificate. This will not be used automatically
+		but can be used when the $CAROOT environment variable is set to its path
+
+	-inter-cn CommonName
+		Intermediate certificate Common Name
+		Defaults to: <Full Username> - Intermediate
+
+	-root
+		Forces the creation of a new root certificate (not needed for inital setup).
+		Can overwrite existing roots but backs up old ones.
+
+	-root-org Organization-Name
+		Change the organizational name of the root certificate as displayed in the browser.
+		Defaults to: <Full Username>
+		Example: mkcert -root-org "MyOrg"
+
+	-root-cn CommonName
+		Change the CommonName of the root certificate.
+		Defaults to: <Full Username> - Root CA
+		Example: mkcert -root-cn "MyName Root E1"
+
+	-root-ou OrganizationalUnit
+		Set an Organizational Unit for the root certificate
+		Not set by default.
+
+	-root-country Country/Region
+		Change the country/region of the root certificate.
+		Defaults to Germany: DE
+		Example: mkcert -root-country "EU"
+
+	-CAROOT
+	    Print the CA certificate and key storage location.
+
+	$CAROOT (environment variable)
+	    Set the CA certificate and key storage location. (This allows
+	    maintaining multiple local CAs in parallel.)
+
+	$TRUST_STORES (environment variable)
+	    A comma-separated list of trust stores to install the local
+	    root CA into. Options are: "system", "java" and "nss" (includes
+	    Firefox). Autodetected by default.
 ```
 
 > **Note:** You _must_ place these options before the domain names list.
@@ -147,7 +202,7 @@ If you want to manage separate CAs, you can use the environment variable `$CAROO
 
 Installing in the trust store does not require the CA key, so you can export the CA certificate and use mkcert to install it in other machines.
 
-* Look for the `rootCA.pem` file in `mkcert -CAROOT`
+* Look for the `rootCA.crt` file in `mkcert -CAROOT`
 * copy it to a different machine
 * set `$CAROOT` to its directory
 * run `mkcert -install`
