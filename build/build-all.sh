@@ -5,7 +5,7 @@
 function build() {
     GOOS=$1
     GOARCH=$2
-    package=$3
+    # package=$3
 
     # omitting GOARCH from output name
     output_name="bin/all/mkcert-$4_$GOOS"
