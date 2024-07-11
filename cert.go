@@ -185,9 +185,10 @@ func (m *mkcert) makeIntermediate() {
 	tpl := &x509.Certificate{
 		SerialNumber: randomSerialNumber(),
 		Subject: pkix.Name{
-			Country:      m.caCert.Subject.Country,
-			Organization: m.caCert.Subject.Organization,
-			CommonName:   cn,
+			Country:            m.caCert.Subject.Country,
+			Organization:       m.caCert.Subject.Organization,
+			OrganizationalUnit: m.caCert.Subject.OrganizationalUnit,
+			CommonName:         cn,
 		},
 		SubjectKeyId: skid[:],
 
