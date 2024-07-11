@@ -36,14 +36,15 @@ const defaultCountry string = "DE"
 var defaultLeafCertLifespan time.Time = time.Now().AddDate(1, 1, 0)
 var defaultIntermediateLifespan time.Time = time.Now().AddDate(1, 1, 0)
 var defaultRootLifespan time.Time = time.Now().AddDate(10, 0, 0)
+var userFullName string
 var defaultOrganization string
 var reducedValidity bool = false
 
 func init() {
 	u, err := user.Current()
 	if err == nil {
-		userFullName := u.Name
-		defaultOrganization = userFullName
+		userFullName = u.Name
+		defaultOrganization = userFullName + " CA"
 	}
 }
 
@@ -444,7 +445,13 @@ func (m *mkcert) newCA() {
 
 	var cn string
 	if m.rootCN == "" {
-		cn = defaultOrganization + " - Root CA"
+		cn = userFullName + " - "
+		if m.rsa {
+			cn += "RSA"
+		} else {
+			cn += "ECC"
+		}
+		cn += " Root"
 	} else {
 		cn = m.rootCN
 	}
