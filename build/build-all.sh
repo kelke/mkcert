@@ -16,6 +16,9 @@ function build() {
     echo "Building for '$GOOS $GOARCH' to '$output_name'"
     env GOOS=$GOOS GOARCH=$GOARCH go build -o $output_name -ldflags "-X main.Version=$(git describe --tags)"
     cp $output_name bin/mkcert-$GOOS
+    cd bin
+    shasum -a 256 mkcert-$GOOS
+    cd ..
 }
 
 function build_all() {
