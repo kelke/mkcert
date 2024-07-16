@@ -98,6 +98,18 @@ To only install the local root CA into a subset of them, you can set the `TRUST_
 ### Advanced options
 
 ```
+	-days DAYS
+		Change the number of days a certificate is valid.
+		Default certificate validity: 1 year, 1 month
+
+	-months MONTHS
+		Change the number of months a certificate is valid.
+		Default certificate validity: 1 year, 1 month
+
+	-years YEARS
+		Change the number of years a certificate is valid.
+		Default certificate validity: 1 year, 1 month
+
 	-cert-file FILE, -key-file FILE, -p12-file FILE
 	    Customize the output paths.
 
@@ -125,8 +137,12 @@ To only install the local root CA into a subset of them, you can set the `TRUST_
 		Defaults to: <Full Username> - Intermediate
 
 	-root
-		Forces the creation of a new root certificate (not needed for inital setup).
+		Forces the creation of a new root certificate (not needed for initial setup).
 		Can overwrite existing roots but backs up old ones.
+
+	-root-years YEARS
+		Change the number of years your root certificate will be valid for.
+		Default: 10 years
 
 	-root-org Organization-Name
 		Change the organizational name of the root certificate as displayed in the browser.
