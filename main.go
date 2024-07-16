@@ -48,6 +48,18 @@ const shortUsage = `Usage of mkcert:
 
 const advancedUsage = `Advanced options:
 
+	-days DAYS
+		Change the number of days a certificate is valid.
+		Default certificate validity: 1 year, 1 month
+
+	-months MONTHS
+		Change the number of months a certificate is valid.
+		Default certificate validity: 1 year, 1 month
+
+	-years YEARS
+		Change the number of years a certificate is valid.
+		Default certificate validity: 1 year, 1 month
+
 	-cert-file FILE, -key-file FILE, -p12-file FILE
 	    Customize the output paths.
 
@@ -75,8 +87,12 @@ const advancedUsage = `Advanced options:
 		Defaults to: <Full Username> - Intermediate
 
 	-root
-		Forces the creation of a new root certificate (not needed for inital setup).
+		Forces the creation of a new root certificate (not needed for initial setup).
 		Can overwrite existing roots but backs up old ones.
+
+	-root-years YEARS
+		Change the number of years your root certificate will be valid for.
+		Default: 10 years
 
 	-root-org Organization-Name
 		Change the organizational name of the root certificate as displayed in the browser.
@@ -141,6 +157,10 @@ func main() {
 		rootCNFlag       = flag.String("root-cn", "", "")
 		rootOUFlag       = flag.String("root-ou", "", "")
 		rootCountryFlag  = flag.String("root-country", "", "")
+		daysFlag         = flag.Int("days", 0, "")
+		monthsFlag       = flag.Int("months", 0, "")
+		yearsFlag        = flag.Int("years", 0, "")
+		rootYearsFlag    = flag.Int("root-years", 0, "")
 		versionFlag      = flag.Bool("version", false, "")
 	)
 	flag.Usage = func() {
@@ -184,17 +204,19 @@ func main() {
 	if *interFlag == false && *interCNFlag != "" {
 		log.Fatalln("ERROR: use -inter to create an intermediate certificate")
 	}
-	if *rootOrgFlag != "" || *rootCNFlag != "" || *rootCountryFlag != "" || *rootOUFlag != "" {
+	if *rootYearsFlag != 0 || *rootOrgFlag != "" || *rootCNFlag != "" || *rootCountryFlag != "" || *rootOUFlag != "" {
 		log.Println("Beware that custom root Arguments will only " +
 			"take effect on generation of a new CA, either on init, or by passing -root")
 	}
 	(&mkcert{
 		installMode: *installFlag, uninstallMode: *uninstallFlag, csrPath: *csrFlag,
 		pkcs12: *pkcs12Flag, rsa: *rsaFlag, client: *clientFlag,
+		days: *daysFlag, months: *monthsFlag, years: *yearsFlag,
 		certFile: *certFileFlag, keyFile: *keyFileFlag, p12File: *p12FileFlag,
 		inter: *interFlag, interCN: *interCNFlag,
 		forceNewRoot: *forceNewRootFlag, rootOrg: *rootOrgFlag,
 		rootCN: *rootCNFlag, rootOU: *rootOUFlag, rootCountry: *rootCountryFlag,
+		rootYears: *rootYearsFlag,
 	}).Run(flag.Args())
 }
 
@@ -205,6 +227,8 @@ type mkcert struct {
 	installMode, uninstallMode  bool
 	pkcs12, rsa, client         bool
 	forceNewRoot, inter         bool
+	days, months, years         int
+	rootYears                   int
 	keyFile, certFile, p12File  string
 	csrPath, interCN, rootOrg   string
 	rootCN, rootCountry, rootOU string

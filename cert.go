@@ -33,9 +33,14 @@ import (
 
 const defaultCountry string = "DE"
 
-var defaultLeafCertLifespan time.Time = time.Now().AddDate(1, 1, 0)
-var defaultIntermediateLifespan time.Time = time.Now().AddDate(1, 1, 0)
-var defaultRootLifespan time.Time = time.Now().AddDate(10, 0, 0)
+// Certificate validity must be less than 825 days,
+// the limit that macOS/iOS apply to all certificates,
+// See https://support.apple.com/en-us/HT210176.
+//
+// Leaf Certificate validity must be less than the root CA validity
+var defaultLeafCertLifetime time.Time = time.Now().AddDate(1, 1, 0)
+var defaultIntermediateLifetime time.Time = time.Now().AddDate(1, 1, 0)
+var defaultRootLifetime time.Time = time.Now().AddDate(10, 0, 0)
 var userFullName string
 var defaultOrganization string
 var reducedValidity bool = false
@@ -57,13 +62,7 @@ func (m *mkcert) makeCert(hosts []string) {
 	fatalIfErr(err, "failed to generate certificate key")
 	pub := priv.(crypto.Signer).Public()
 
-	// Certificate validity must be less than 825 days,
-	// the limit that macOS/iOS apply to all certificates,
-	// See https://support.apple.com/en-us/HT210176.
-	//
-	// Leaf Certificate validity must be less than the root CA validity
-	expiration := validateExpiration(m.caCert, defaultLeafCertLifespan)
-
+	expiration := m.getLifetime(defaultLeafCertLifetime, false)
 	tpl := &x509.Certificate{
 		SerialNumber: randomSerialNumber(),
 		Subject: pkix.Name{
@@ -172,9 +171,7 @@ func (m *mkcert) makeIntermediate() {
 
 	skid := sha1.Sum(spki.SubjectPublicKey.Bytes)
 
-	// Intermediate CA validity must be less than the root CA validity
-	expiration := validateExpiration(m.caCert, defaultIntermediateLifespan)
-
+	expiration := m.getLifetime(defaultIntermediateLifetime, false)
 	var cn string
 	if m.interCN == "" {
 		cn = defaultOrganization + " - Intermediate"
@@ -324,8 +321,7 @@ func (m *mkcert) makeCertFromCSR() {
 	fatalIfErr(err, "failed to parse the CSR")
 	fatalIfErr(csr.CheckSignature(), "invalid CSR signature")
 
-	// Leaf Certificate validity must be less than the root CA validity
-	expiration := validateExpiration(m.caCert, defaultLeafCertLifespan)
+	expiration := m.getLifetime(defaultLeafCertLifetime, false)
 	tpl := &x509.Certificate{
 		SerialNumber:    randomSerialNumber(),
 		Subject:         csr.Subject,
@@ -459,6 +455,7 @@ func (m *mkcert) newCA() {
 		cn = m.rootCN
 	}
 
+	expiration := m.getLifetime(defaultRootLifetime, true)
 	tpl := &x509.Certificate{
 		SerialNumber: randomSerialNumber(),
 		Subject: pkix.Name{
@@ -472,7 +469,7 @@ func (m *mkcert) newCA() {
 		},
 		SubjectKeyId: skid[:],
 
-		NotBefore: time.Now(), NotAfter: defaultRootLifespan,
+		NotBefore: time.Now(), NotAfter: expiration,
 
 		KeyUsage: x509.KeyUsageCertSign,
 
@@ -515,4 +512,22 @@ func (m *mkcert) newCA() {
 
 func (m *mkcert) caUniqueName() string {
 	return defaultOrganization + " - RootCA" + m.caCert.SerialNumber.String()
+}
+
+// returns a valid not.After date
+func (m *mkcert) getLifetime(defaultLifetime time.Time, isRoot bool) time.Time {
+	lifetime := defaultLifetime
+
+	if isRoot {
+		if m.rootYears != 0 {
+			lifetime = time.Now().AddDate(m.rootYears, 0, 0)
+		}
+		// root certificates don't need lifetime validation
+		return lifetime
+	}
+
+	if m.days != 0 || m.months != 0 || m.years != 0 {
+		lifetime = time.Now().AddDate(m.years, m.months, m.days)
+	}
+	return validateExpiration(m.caCert, lifetime)
 }
