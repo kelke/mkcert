@@ -227,6 +227,8 @@ func (m *mkcert) makeIntermediate() {
 	}
 }
 
+// Checks if leaf-/intermediate certificate validity is within the root validity
+// reduces the requested validity to the validity of the root certificate if necessary
 func validateExpiration(caCert *x509.Certificate, expiration time.Time) time.Time {
 	if expiration.After(caCert.NotAfter) {
 		expiration = caCert.NotAfter
@@ -494,6 +496,7 @@ func (m *mkcert) newCA() {
 	}
 	renamePath = filepath.Join(m.CAROOT, rootName)
 	if pathExists(renamePath) {
+		// move old certificate to <oldname>-old.bak
 		newPath := renamePath + "-old.bak"
 		err = os.Rename(renamePath, newPath)
 		fatalIfErr(err, "failed to move old root CA certificate")
