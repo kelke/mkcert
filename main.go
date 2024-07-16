@@ -47,7 +47,6 @@ const shortUsage = `Usage of mkcert:
 `
 
 const advancedUsage = `Advanced options:
-
 	-days DAYS
 		Change the number of days a certificate is valid.
 		Default certificate validity: 1 year, 1 month
