@@ -1,6 +1,7 @@
 #! /bin/bash
 # run from project root
 
+hashes=""
 
 function build() {
     GOOS=$1
@@ -8,23 +9,28 @@ function build() {
     # package=$3
 
     # omitting GOARCH from output name
-    output_name="bin/all/mkcert-$4_$GOOS"
-	if [ $GOOS = "windows" ]; then
-		output_name+='.exe'
-	fi
+    dist="$GOOS"
+    if [ $GOOS = "windows" ]; then
+      dist+=".exe"
+    fi
+    full_output_path="bin/all/mkcert_$4-$dist"
 
-    echo "Building for '$GOOS $GOARCH' to '$output_name'"
-    env GOOS=$GOOS GOARCH=$GOARCH go build -o $output_name -ldflags "-X main.Version=$(git describe --tags)"
-    cp $output_name bin/mkcert-$GOOS
+
+    echo "Building for '$GOOS $GOARCH' to '$full_output_path'"
+    env GOOS="$GOOS" GOARCH="$GOARCH" go build -o "$full_output_path" -ldflags "-X main.Version=$(git describe --tags)"
+    ln -f "$full_output_path" "bin/mkcert-$dist"
     cd bin || return
-    shasum -a 256 mkcert-$GOOS
+    hashes+=$(shasum -a 256 mkcert-"$dist")"\n"
     cd .. || return
 }
 
 function build_all() {
-    build linux   amd64 $1 $2
-    build darwin  arm64 $1 $2
-    build windows amd64 $1 $2
+    build darwin  arm64 "$1" "$2"
+    build linux   amd64 "$1" "$2"
+    build windows amd64 "$1" "$2"
+    echo ""
+    echo "SHA-256 file hashes:"
+    echo -e "$hashes"
 }
 
 
